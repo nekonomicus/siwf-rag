@@ -1,96 +1,9 @@
 """
 PDF Content Loader
-Loads and parses PDF documents for the RAG system
+Pre-extracted PDF content for the RAG system
 """
 import requests
-import io
 import os
-
-# Try to import PyMuPDF (fitz) first, fall back to others
-try:
-    import fitz  # PyMuPDF
-    PDF_LIB = 'pymupdf'
-except ImportError:
-    try:
-        import pypdf
-        PDF_LIB = 'pypdf'
-    except ImportError:
-        PDF_LIB = None
-
-def extract_text_pymupdf(pdf_bytes):
-    """Extract text using PyMuPDF"""
-    doc = fitz.open(stream=pdf_bytes, filetype="pdf")
-    text = ""
-    for page in doc:
-        text += page.get_text() + "\n\n"
-    return text
-
-def extract_text_pypdf(pdf_bytes):
-    """Extract text using pypdf"""
-    from pypdf import PdfReader
-    reader = PdfReader(io.BytesIO(pdf_bytes))
-    text = ""
-    for page in reader.pages:
-        text += page.extract_text() + "\n\n"
-    return text
-
-def extract_pdf_text(pdf_source):
-    """
-    Extract text from PDF file or URL
-    
-    Args:
-        pdf_source: File path or URL to PDF
-    
-    Returns:
-        Extracted text content
-    """
-    if PDF_LIB is None:
-        raise ImportError("No PDF library available. Install pymupdf or pypdf.")
-    
-    # Get PDF bytes
-    if pdf_source.startswith('http'):
-        response = requests.get(pdf_source, timeout=30)
-        response.raise_for_status()
-        pdf_bytes = response.content
-    else:
-        with open(pdf_source, 'rb') as f:
-            pdf_bytes = f.read()
-    
-    # Extract text
-    if PDF_LIB == 'pymupdf':
-        return extract_text_pymupdf(pdf_bytes)
-    else:
-        return extract_text_pypdf(pdf_bytes)
-
-def load_pdf_to_api(pdf_source, api_url, source_name=None, title=None):
-    """Load PDF content into the RAG API"""
-    
-    # Extract text
-    print(f"Extracting text from: {pdf_source}")
-    text = extract_pdf_text(pdf_source)
-    print(f"Extracted {len(text)} characters")
-    
-    # Determine source name
-    if source_name is None:
-        if pdf_source.startswith('http'):
-            source_name = pdf_source.split('/')[-1]
-        else:
-            source_name = os.path.basename(pdf_source)
-    
-    # Send to API
-    response = requests.post(
-        f"{api_url}/api/ingest",
-        json={
-            'source': f'pdf:{source_name}',
-            'source_url': pdf_source if pdf_source.startswith('http') else None,
-            'title': title or source_name,
-            'content': text
-        }
-    )
-    
-    result = response.json()
-    print(f"Ingested: {result}")
-    return result
 
 # Pre-loaded content for the orthopedics PDF
 # This is the content from the SIWF orthopedics training program
