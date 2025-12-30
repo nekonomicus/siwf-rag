@@ -7,8 +7,8 @@ import json
 import hashlib
 from flask import Flask, request, jsonify, render_template_string
 from flask_cors import CORS
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import psycopg
+from psycopg.rows import dict_row
 import google.generativeai as genai
 
 app = Flask(__name__)
@@ -23,7 +23,7 @@ if GEMINI_API_KEY:
 
 def get_db():
     """Get database connection"""
-    conn = psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
+    conn = psycopg.connect(DATABASE_URL, row_factory=dict_row)
     return conn
 
 def init_db():
